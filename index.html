@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3D4A2E">
+<title>המתכונים שלי</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cream: #FAF6F0;
+    --cream-deep: #F1EAE0;
+    --olive: #3D4A2E;
+    --olive-light: #5C6D47;
+    --clay: #8B5A3C;
+    --charcoal: #2A2724;
+    --charcoal-soft: #55504A;
+    --line: #E4DACB;
+    --card-bg: #FFFFFF;
+
+    --serif: 'Fraunces', serif;
+    --sans: 'Assistant', sans-serif;
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--cream);
+    color: var(--charcoal);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cream: #211F1C;
+      --cream-deep: #2A2724;
+      --card-bg: #2A2724;
+      --charcoal: #F1EAE0;
+      --charcoal-soft: #C9C0B3;
+      --line: #423D36;
+      --olive-light: #8CA073;
+    }
+  }
+  :root[data-theme="dark"] {
+    --cream: #211F1C;
+    --cream-deep: #2A2724;
+    --card-bg: #2A2724;
+    --charcoal: #F1EAE0;
+    --charcoal-soft: #C9C0B3;
+    --line: #423D36;
+    --olive-light: #8CA073;
+  }
+
+  header {
+    padding: 28px 20px 20px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .kicker {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--clay);
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 34px;
+    margin: 0;
+    color: var(--charcoal);
+    letter-spacing: -0.01em;
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 4px 20px 60px;
+  }
+
+  #search {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    background: var(--card-bg);
+    color: var(--charcoal);
+    font-family: var(--sans);
+    font-size: 16px;
+    margin-bottom: 22px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  #search:focus {
+    border-color: var(--olive);
+  }
+  #search::placeholder {
+    color: var(--charcoal-soft);
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+    text-align: right;
+  }
+  .card:hover {
+    border-color: var(--olive-light);
+  }
+  .card:active {
+    transform: scale(0.99);
+  }
+
+  .card-title {
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--charcoal);
+  }
+
+  .card-desc {
+    font-size: 15px;
+    color: var(--charcoal-soft);
+    margin: 0 0 12px;
+  }
+
+  .card-meta {
+    display: flex;
+    gap: 14px;
+    font-size: 13px;
+    color: var(--olive-light);
+    font-weight: 600;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--charcoal-soft);
+    font-size: 15px;
+  }
+
+  /* ---- Recipe detail view ---- */
+
+  .recipe-view {
+    display: none;
+  }
+  .recipe-view.active {
+    display: block;
+  }
+  .list-view.hidden,
+  header.hidden {
+    display: none;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--olive);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 0;
+    margin: 20px 20px 0;
+  }
+
+  .recipe-header {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 8px 20px 24px;
+  }
+
+  .recipe-header h2 {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 700;
+    margin: 6px 0 8px;
+    line-height: 1.15;
+  }
+
+  .recipe-header p {
+    color: var(--charcoal-soft);
+    font-size: 16px;
+    margin: 0 0 14px;
+  }
+
+  .recipe-meta {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+  }
+  .recipe-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--clay);
+    font-weight: 600;
+  }
+
+  .recipe-body {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+    display: grid;
+    gap: 32px;
+  }
+
+  @media (min-width: 640px) {
+    .recipe-body {
+      grid-template-columns: 1fr 1.4fr;
+      align-items: start;
+    }
+  }
+
+  .block-title {
+    font-family: var(--serif);
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    color: var(--olive);
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 8px;
+  }
+
+  .ingredients-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ingredients-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 15.5px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--line);
+  }
+
+  .ingredients-list li::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--clay);
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .steps-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .steps-list li {
+    counter-increment: step;
+    display: flex;
+    gap: 14px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .steps-list li::before {
+    content: counter(step);
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--cream);
+    background: var(--olive);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .notes {
+    margin-top: 28px;
+    padding: 16px 18px;
+    background: var(--cream-deep);
+    border-radius: 10px;
+    font-size: 14.5px;
+    color: var(--charcoal-soft);
+    border-right: 3px solid var(--clay);
+  }
+  .notes strong {
+    color: var(--charcoal);
+  }
+</style>
+</head>
+<body>
+
+<header id="listHeader">
+  <p class="kicker">ספר המתכונים</p>
+  <h1>המתכונים שלי</h1>
+</header>
+
+<main>
+  <div class="list-view" id="listView">
+    <input type="text" id="search" placeholder="חיפוש מתכון…">
+    <div class="list" id="recipeList"></div>
+  </div>
+
+  <div class="recipe-view" id="recipeView">
+    <button class="back-btn" id="backBtn">→ חזרה לרשימה</button>
+    <div class="recipe-header" id="recipeHeader"></div>
+    <div class="recipe-body" id="recipeBody"></div>
+  </div>
+</main>
+
+<script src="recipes.js"></script>
+<script>
+  const listView = document.getElementById('listView');
+  const recipeView = document.getElementById('recipeView');
+  const listHeader = document.getElementById('listHeader');
+  const recipeList = document.getElementById('recipeList');
+  const search = document.getElementById('search');
+  const backBtn = document.getElementById('backBtn');
+  const recipeHeader = document.getElementById('recipeHeader');
+  const recipeBody = document.getElementById('recipeBody');
+
+  function renderList(filter = '') {
+    const q = filter.trim().toLowerCase();
+    const filtered = RECIPES.filter(r => {
+      if (!q) return true;
+      const haystack = [r.title, r.description, ...(r.tags || [])].join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+
+    if (filtered.length === 0) {
+      recipeList.innerHTML = '<div class="empty">לא נמצאו מתכונים תואמים</div>';
+      return;
+    }
+
+    recipeList.innerHTML = filtered.map(r => `
+      <div class="card" data-id="${r.id}">
+        <p class="card-title">${escapeHtml(r.title)}</p>
+        ${r.description ? `<p class="card-desc">${escapeHtml(r.description)}</p>` : ''}
+        <div class="card-meta">
+          ${r.time ? `<span>⏱ ${escapeHtml(r.time)}</span>` : ''}
+          ${r.servings ? `<span>🍽 ${escapeHtml(r.servings)}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    recipeList.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => openRecipe(card.dataset.id));
+    });
+  }
+
+  function openRecipe(id) {
+    const r = RECIPES.find(x => x.id === id);
+    if (!r) return;
+
+    recipeHeader.innerHTML = `
+      <p class="kicker">${(r.tags || []).map(escapeHtml).join(' · ')}</p>
+      <h2>${escapeHtml(r.title)}</h2>
+      ${r.description ? `<p>${escapeHtml(r.description)}</p>` : ''}
+      <div class="recipe-meta">
+        ${r.time ? `<span>⏱ ${escapeHtml(r.time)}</span>` : ''}
+        ${r.servings ? `<span>🍽 ${escapeHtml(r.servings)}</span>` : ''}
+      </div>
+    `;
+
+    recipeBody.innerHTML = `
+      <div>
+        <p class="block-title">מרכיבים</p>
+        <ul class="ingredients-list">
+          ${(r.ingredients || []).map(i => `<li>${escapeHtml(i)}</li>`).join('')}
+        </ul>
+      </div>
+      <div>
+        <p class="block-title">הכנה</p>
+        <ol class="steps-list">
+          ${(r.steps || []).map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+        </ol>
+        ${r.notes ? `<div class="notes"><strong>הערה: </strong>${escapeHtml(r.notes)}</div>` : ''}
+      </div>
+    `;
+
+    listView.classList.add('hidden');
+    listHeader.classList.add('hidden');
+    recipeView.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function closeRecipe() {
+    recipeView.classList.remove('active');
+    listView.classList.remove('hidden');
+    listHeader.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  search.addEventListener('input', e => renderList(e.target.value));
+  backBtn.addEventListener('click', closeRecipe);
+
+  renderList();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
