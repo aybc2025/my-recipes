@@ -21,7 +21,10 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      // All of the owner's GitHub Pages apps share one origin, so only touch our own caches.
+      Promise.all(keys
+        .filter(k => k.startsWith('recipes-cache-') && k !== CACHE_NAME)
+        .map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
