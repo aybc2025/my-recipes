@@ -1,9 +1,14 @@
-const CACHE_NAME = 'recipes-cache-v1';
+// Network-first: when online you always get the latest recipes.js / index.html,
+// and the cached copy is used only when offline.
+// Bump CACHE_NAME if you ever change the list of precached files.
+const CACHE_NAME = 'recipes-cache-v2';
 const FILES_TO_CACHE = [
   './',
   './index.html',
   './recipes.js',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', event => {
@@ -23,7 +28,18 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    fetch(req)
+      .then(res => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
   );
 });
