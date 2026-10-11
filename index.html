@@ -334,12 +334,125 @@
   .notes strong {
     color: var(--charcoal);
   }
+
+  /* ---- Keep-screen-on toggle ---- */
+
+  :root { --dir: 1; --ease-out: cubic-bezier(0.23, 1, 0.32, 1); }
+  :root[dir="rtl"] { --dir: -1; }
+
+  .header-top,
+  .recipe-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .header-top { margin-bottom: 4px; }
+  .header-top .kicker { margin: 0; }
+  .recipe-bar {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 20px 0;
+  }
+  .recipe-bar .back-btn { margin: 0; }
+
+  .awake-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 0 14px;
+    background: var(--card-bg);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    color: var(--charcoal-soft);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+  .awake-toggle[hidden] { display: none; }
+  .awake-toggle:active { transform: scale(0.97); }
+  .awake-toggle:focus-visible {
+    outline: 2px solid var(--olive-light);
+    outline-offset: 2px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .awake-toggle:hover { border-color: var(--olive-light); }
+  }
+  .awake-toggle[aria-checked="true"] {
+    color: var(--olive-light);
+    border-color: var(--olive-light);
+  }
+
+  .awake-track {
+    position: relative;
+    flex-shrink: 0;
+    width: 40px;
+    height: 24px;
+    border: 1.5px solid var(--charcoal-soft);
+    border-radius: 999px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .awake-knob {
+    position: absolute;
+    top: calc(50% - 7px);
+    inset-inline-start: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--charcoal-soft);
+    transition: transform 0.2s var(--ease-out), background-color 0.15s ease;
+  }
+  .awake-toggle[aria-checked="true"] .awake-track {
+    background: var(--olive-light);
+    border-color: var(--olive-light);
+  }
+  .awake-toggle[aria-checked="true"] .awake-knob {
+    background: var(--card-bg);
+    transform: translateX(calc(var(--dir) * 17px));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .awake-toggle:active { transform: none; }
+    .awake-knob { transition: background-color 0.15s ease; }
+  }
+
+  .toast {
+    position: fixed;
+    inset-inline: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    max-width: 360px;
+    margin-inline: auto;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: var(--charcoal);
+    color: var(--cream);
+    font-size: 15px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
 </style>
 </head>
 <body>
 
 <header id="listHeader">
-  <p class="kicker">ספר המתכונים</p>
+  <div class="header-top">
+    <p class="kicker">ספר המתכונים</p>
+    <button type="button" class="awake-toggle" data-awake-toggle role="switch" aria-checked="false">
+      <span>מסך דלוק</span>
+      <span class="awake-track" aria-hidden="true"><span class="awake-knob"></span></span>
+    </button>
+  </div>
   <h1>המתכונים שלי</h1>
 </header>
 
@@ -350,11 +463,19 @@
   </div>
 
   <div class="recipe-view" id="recipeView">
-    <button class="back-btn" id="backBtn">→ חזרה לרשימה</button>
+    <div class="recipe-bar">
+      <button class="back-btn" id="backBtn">→ חזרה לרשימה</button>
+      <button type="button" class="awake-toggle" data-awake-toggle role="switch" aria-checked="false">
+        <span>מסך דלוק</span>
+        <span class="awake-track" aria-hidden="true"><span class="awake-knob"></span></span>
+      </button>
+    </div>
     <div class="recipe-header" id="recipeHeader"></div>
     <div class="recipe-body" id="recipeBody"></div>
   </div>
 </main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="recipes.js"></script>
 <script>
@@ -449,6 +570,100 @@
   backBtn.addEventListener('click', closeRecipe);
 
   renderList();
+
+  // ---- Keep screen on (Screen Wake Lock API) ----
+  // The preference is saved so it survives reloads. The browser drops the lock
+  // whenever the page is hidden, so it is re-acquired when the page is visible again.
+  const AWAKE_KEY = 'my-recipes:keep-awake';
+  const awakeToggles = document.querySelectorAll('[data-awake-toggle]');
+  const toastEl = document.getElementById('toast');
+  let wantAwake = false;
+  let wakeSentinel = null;
+  let acquiring = null;
+  let toastTimer = null;
+
+  function loadAwakePref() {
+    try { return localStorage.getItem(AWAKE_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  function saveAwakePref(on) {
+    try { localStorage.setItem(AWAKE_KEY, on ? '1' : '0'); } catch (e) {}
+  }
+
+  function renderAwake() {
+    awakeToggles.forEach(btn => btn.setAttribute('aria-checked', String(wantAwake)));
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+  }
+
+  function acquireWakeLock() {
+    if (wakeSentinel) return Promise.resolve(true);
+    if (document.visibilityState !== 'visible') return Promise.resolve(false);
+    if (!acquiring) {
+      acquiring = navigator.wakeLock.request('screen')
+        .then(sentinel => {
+          wakeSentinel = sentinel;
+          sentinel.addEventListener('release', () => {
+            if (wakeSentinel === sentinel) wakeSentinel = null;
+          });
+          if (!wantAwake) releaseWakeLock();
+          return true;
+        })
+        .catch(() => false)
+        .finally(() => { acquiring = null; });
+    }
+    return acquiring;
+  }
+
+  function releaseWakeLock() {
+    const sentinel = wakeSentinel;
+    wakeSentinel = null;
+    if (sentinel) sentinel.release().catch(() => {});
+  }
+
+  async function toggleAwake() {
+    if (wantAwake) {
+      wantAwake = false;
+      saveAwakePref(false);
+      releaseWakeLock();
+      renderAwake();
+      return;
+    }
+    wantAwake = true;
+    renderAwake();
+    const ok = await acquireWakeLock();
+    if (!wantAwake) return; // switched off again while waiting
+    if (ok) {
+      saveAwakePref(true);
+    } else {
+      wantAwake = false;
+      renderAwake();
+      showToast('לא ניתן להשאיר את המסך דלוק');
+    }
+  }
+
+  if ('wakeLock' in navigator) {
+    wantAwake = loadAwakePref();
+    renderAwake();
+    awakeToggles.forEach(btn => btn.addEventListener('click', toggleAwake));
+
+    if (wantAwake) acquireWakeLock();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && wantAwake) acquireWakeLock();
+    });
+    // Some browsers only grant the lock after a user gesture; retry on the next tap.
+    document.addEventListener('pointerdown', () => {
+      if (wantAwake && !wakeSentinel) acquireWakeLock();
+    }, { passive: true });
+  } else {
+    awakeToggles.forEach(btn => { btn.hidden = true; });
+  }
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
